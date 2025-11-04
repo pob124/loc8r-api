@@ -49,14 +49,19 @@ const homelist = (req, res) => {
 
   request(
     requestOptions,
-    (err, { statusCode }, body) => {
+    (err, response, body) => {
       let data = [];
-      if (statusCode === 200 && body.length) {
+      if (err) {
+        console.error('Error fetching locations:', err);
+        renderHomepage(req, res, data);
+        return;
+      }
+      if (response.statusCode === 200 && body.length) {
         data = body.map((item) => {
           item.distance = formatDistance(item.distance);
           return item;
         });
-      };
+      }
 
       renderHomepage(req, res, data);
     }
@@ -137,20 +142,21 @@ const getLocationInfo = (req, res, callback) => {
   request(
     requestOptions,
     (err, response, body) => {
-      let data = [];
       if (err) {
-        console.error('Error fetching locations:', err);
-        renderHomepage(req, res, data);
+        console.error('Error fetching location:', err);
+        showError(req, res, 500);
         return;
       }
-      if (response.statusCode === 200 && body.length) {
-        data = body.map((item) => {
-          item.distance = formatDistance(item.distance);
-          return item;
-        });
+      let data = body;
+      if (response.statusCode === 200) {
+        data.coords = {
+          lng: body.coords[0],
+          lat: body.coords[1]
+        };
+        callback(req, res, data);
+      } else {
+        showError(req, res, response.statusCode);
       }
-
-      renderHomepage(req, res, data);
     }
   );
 };
@@ -182,24 +188,33 @@ const doAddReview = (req, res) => {
     method: 'POST',
     json: postdata
   };
-  request(
-    requestOptions,
-    (err, {statusCode}, body) => {
-      if (statusCode === 201) {
-        res.redirect(`/location/${locationid}`);
-      } else if (statusCode === 400 && body.name && body.name === 'ValidationError') {
-        res.redirect(`/location/${locationid}/review/new?err=val`);
-      }else {
-        showError(req, res, statusCode);
+  if (!postdata.author || !postdata.rating || !postdata.reviewText) {
+    res.redirect(`/location/${locationid}/review/new?err=val`);
+  } else {
+    request(
+      requestOptions,
+      (err, response, body) => {
+        if (err) {
+          console.error('Error adding review:', err);
+          showError(req, res, 500);
+          return;
+        }
+        if (response.statusCode === 201) {
+          res.redirect(`/location/${locationid}`);
+        } else if (response.statusCode === 400 && body.name && body.name === 'ValidationError') {
+          res.redirect(`/location/${locationid}/review/new?err=val`);
+        } else {
+          showError(req, res, response.statusCode);
+        }
       }
-    }
-  );
+    );
+  }
 };
-
 module.exports = {
   homelist,
   locationInfo,
   addReview,
   doAddReview
 };
+
 
