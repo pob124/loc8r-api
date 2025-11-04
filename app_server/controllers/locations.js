@@ -136,17 +136,21 @@ const getLocationInfo = (req, res, callback) => {
   };
   request(
     requestOptions,
-    (err, {statusCode}, body) => {
-      let data = body;
-      if (statusCode === 200) {
-        data.coords = {
-          lng: body.coords[0],
-          lat: body.coords[1]
-        };
-        callback(req, res, data);
-      } else {
-        showError(req, res, statusCode);
+    (err, response, body) => {
+      let data = [];
+      if (err) {
+        console.error('Error fetching locations:', err);
+        renderHomepage(req, res, data);
+        return;
       }
+      if (response.statusCode === 200 && body.length) {
+        data = body.map((item) => {
+          item.distance = formatDistance(item.distance);
+          return item;
+        });
+      }
+
+      renderHomepage(req, res, data);
     }
   );
 };
