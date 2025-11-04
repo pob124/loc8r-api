@@ -5,7 +5,7 @@ const apiOptions = {
 };
 
 if (process.env.NODE_ENV === 'production') {
-  apiOptions.server = 'https://loc8r-api-x84y.onrender.com/';
+  apiOptions.server = '';
 }
 
 
