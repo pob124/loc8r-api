@@ -28,7 +28,7 @@ const openingTimeSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    createdOn: {
+    timestamp: {
       type: Date,
       'default': Date.now
     }
